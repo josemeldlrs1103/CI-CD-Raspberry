@@ -1,23 +1,24 @@
-#Librerías utilizadas
+#Used Libraries
 import RPi.GPIO as GPIO
 import time
-# Ajustes Iniciales GPIO
+#GPIO initial adjustments
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
-# Configuración de pines de entradas de datos
-Entrada=14
+#Input pins
+Entrance=14
 B4=15
 B3=18
 B2=23
 B1=24
-Espacio=25
-GPIO.setup(Entrada,GPIO.IN)
+ParkL=25
+GPIO.setup(Entrance,GPIO.IN)
 GPIO.setup(B4,GPIO.IN)
 GPIO.setup(B3,GPIO.IN)
 GPIO.setup(B2,GPIO.IN)
 GPIO.setup(B1,GPIO.IN)
-GPIO.setup(Espacio,GPIO.IN)
-# Configuración de pines de salida de datos
+GPIO.setup(ParkL,GPIO.IN)
+#Output pins
+Wait=22
 A=10
 B=9
 C=11
@@ -25,6 +26,9 @@ D=5
 E=6
 F=13
 G=19
+Mainlight=26
+GPIO.setup(Wait,GPIO.OUT)
+GPIO.output(Wait,False)
 GPIO.setup(A,GPIO.OUT)
 GPIO.output(A,False)
 GPIO.setup(B,GPIO.OUT)
@@ -39,8 +43,9 @@ GPIO.setup(F,GPIO.OUT)
 GPIO.output(F,False)
 GPIO.setup(G,GPIO.OUT)
 GPIO.output(G,False)
-#Inicio del programa de registro de ingreso y salida de autos
-        
+GPIO.setup(Mainlight,GPIO.OUT)
+GPIO.output(Mainlight,False)
+#Inputs to Decimal number 
 def getBinary():
     Posiciones=[B4,B3,B2,B1]
     Cadena=""
@@ -50,12 +55,51 @@ def getBinary():
         else:
             Cadena=Cadena+"0"
     return int(Cadena,2)
+#Parking Class
+class Parking:
+    def __init__(self,numb, state, time):
+        self.Number = numb
+        self.Status = state
+        self.LastChange = time
+#Creation and filling of a list of parking spaces
+OpenTime = time.strftime("%c")
+ParkingLots = []
+for x in range(16):
+    ParkingLots.append(Parking(x,'Empty',OpenTime))
+#Eliminar variables que no se usarán.
+del x
+del OpenTime
+#Main program
 while(True):
-    if(not GPIO.input(Entrada)):
-        print("Vehículo ingresó " + time.strftime("%c"))
+    #When a car is sensed
+    if(not GPIO.input(Entrance)):
+        RemainingSpace = 16
+        for Lot in ParkingLots:
+            if (Lot.Status ==  'Occupied'):
+                RemainingSpace -= 1
+        if (RemainingSpace==0): print('There are no available spaces, please come back later')
+        else:
+            #List of available spaces
+            Available = []
+            for Lot in ParkingLots:
+                if (Lot.Status ==  'Empty'):
+                    print('Parking ' + str(Lot.Number) + ' available')
+                    Available.append(Lot.Number)
+            Parked=False
+            print("Go ahead and choose one parking lot")
+            while(Parked == False):
+                ParkingSpace = getBinary()
+                if(not GPIO.input(ParkL)):
+                   if (ParkingSpace in Available):
+                       for element in ParkingLots:
+                           if(element.Number == ParkingSpace):
+                               element.Status = "Occupied"
+                               element.LastChange = time.strftime("%c")
+                               Parked=True
+                               break
     else:
-        NumParqueo = getBinary()
-        if(NumParqueo == 0):
+        ParkNumber = getBinary()
+        if(ParkNumber == 0):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -63,7 +107,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,False)
-        elif(NumParqueo == 1):
+        elif(ParkNumber == 1):
             GPIO.output(A,False)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -71,7 +115,7 @@ while(True):
             GPIO.output(E,False)
             GPIO.output(F,False)
             GPIO.output(G,False)
-        elif(NumParqueo == 2):
+        elif(ParkNumber == 2):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,False)
@@ -79,7 +123,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,False)
             GPIO.output(G,True)
-        elif(NumParqueo == 3):
+        elif(ParkNumber == 3):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -87,7 +131,7 @@ while(True):
             GPIO.output(E,False)
             GPIO.output(F,False)
             GPIO.output(G,True)
-        elif(NumParqueo == 4):
+        elif(ParkNumber == 4):
             GPIO.output(A,False)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -95,7 +139,7 @@ while(True):
             GPIO.output(E,False)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 5):
+        elif(ParkNumber == 5):
             GPIO.output(A,True)
             GPIO.output(B,False)
             GPIO.output(C,True)
@@ -103,7 +147,7 @@ while(True):
             GPIO.output(E,False)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 6):
+        elif(ParkNumber == 6):
             GPIO.output(A,True)
             GPIO.output(B,False)
             GPIO.output(C,True)
@@ -111,7 +155,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 7):
+        elif(ParkNumber == 7):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -119,7 +163,7 @@ while(True):
             GPIO.output(E,False)
             GPIO.output(F,False)
             GPIO.output(G,False)
-        elif(NumParqueo == 8):
+        elif(ParkNumber == 8):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -127,7 +171,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 9):
+        elif(ParkNumber == 9):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -135,7 +179,7 @@ while(True):
             GPIO.output(E,False)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 10):
+        elif(ParkNumber == 10):
             GPIO.output(A,True)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -143,7 +187,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 11):
+        elif(ParkNumber == 11):
             GPIO.output(A,False)
             GPIO.output(B,False)
             GPIO.output(C,True)
@@ -151,7 +195,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 12):
+        elif(ParkNumber == 12):
             GPIO.output(A,True)
             GPIO.output(B,False)
             GPIO.output(C,False)
@@ -159,7 +203,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,False)
-        elif(NumParqueo == 13):
+        elif(ParkNumber == 13):
             GPIO.output(A,False)
             GPIO.output(B,True)
             GPIO.output(C,True)
@@ -167,7 +211,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,False)
             GPIO.output(G,True)
-        elif(NumParqueo == 14):
+        elif(ParkNumber == 14):
             GPIO.output(A,True)
             GPIO.output(B,False)
             GPIO.output(C,False)
@@ -175,7 +219,7 @@ while(True):
             GPIO.output(E,True)
             GPIO.output(F,True)
             GPIO.output(G,True)
-        elif(NumParqueo == 15):
+        elif(ParkNumber == 15):
             GPIO.output(A,True)
             GPIO.output(B,False)
             GPIO.output(C,False)
